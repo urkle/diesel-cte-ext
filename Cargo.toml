@@ -10,7 +10,7 @@ resolver = "2"
 
 [dependencies]
 diesel = { version = "2", default-features = false }
-diesel-async = { version = "0.8", default-features = false, optional = true, features = ["postgres", "sqlite", "tokio", "async-connection-wrapper"] }
+diesel-async = { version = "0.7", default-features = false, optional = true, features = ["postgres", "sqlite", "tokio", "async-connection-wrapper"] }
 
 [lints.clippy]
 pedantic = { level = "warn", priority = -1 }

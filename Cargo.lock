@@ -536,6 +536,20 @@ dependencies = [
 
 [[package]]
 name = "diesel-async"
+version = "0.7.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "13096fb8dae53f2d411c4b523bec85f45552ed3044a2ab4d85fb2092d9cb4f34"
+dependencies = [
+ "diesel",
+ "futures-core",
+ "futures-util",
+ "scoped-futures",
+ "tokio",
+ "tokio-postgres",
+]
+
+[[package]]
+name = "diesel-async"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b95864e58597509106f1fddfe0600de7e589e1fddddd87f54eee0a49fd111bbc"
@@ -554,7 +568,8 @@ name = "diesel-cte-ext"
 version = "0.2.0"
 dependencies = [
  "diesel",
- "diesel-async",
+ "diesel-async 0.7.4",
+ "diesel-async 0.8.0",
  "pg-embed-setup-unpriv",
  "rstest",
  "serde_json",
