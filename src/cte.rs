@@ -123,6 +123,31 @@ impl UnionKind {
     }
 }
 
+/// Define the search mode for the CTE
+#[derive(Debug, Clone)]
+pub struct SearchConfig {
+    pub(crate) style: SearchStyle,
+    pub(crate) search_column: &'static str,
+    pub(crate) output_column: &'static str,
+}
+
+/// Define the search mode to tell the DB to use when scanning the recursive CTE.
+#[derive(Debug, Clone, Copy)]
+pub enum SearchStyle {
+    /// Tells the DB to perform a breadth first scan of the recursive CTE
+    BreadthFirst,
+    /// Tells the DB to perform a depth first scan of the recursive CTE.
+    DepthFirst,
+}
+impl std::fmt::Display for SearchStyle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::BreadthFirst => write!(f, "BREADTH FIRST"),
+            Self::DepthFirst => write!(f, "DEPTH FIRST"),
+        }
+    }
+}
+
 /// Representation of a recursive CTE query.
 #[derive(Debug, Clone)]
 pub struct WithRecursive<DB: Backend, Cols, Seed, Step, Body> {
@@ -132,7 +157,27 @@ pub struct WithRecursive<DB: Backend, Cols, Seed, Step, Body> {
     pub(crate) step: Step,
     pub(crate) body: Body,
     pub(crate) union_kind: UnionKind,
+    pub(crate) search_config: Option<SearchConfig>,
     pub(crate) _marker: std::marker::PhantomData<DB>,
+}
+
+impl<DB: Backend, Cols, Seed, Step, Body> WithRecursive<DB, Cols, Seed, Step, Body> {
+    /// Specify the search mode for the recursive CTE.
+    pub fn with_search(
+        self,
+        style: SearchStyle,
+        search_column: &'static str,
+        output_column: &'static str,
+    ) -> Self {
+        Self {
+            search_config: Some(SearchConfig {
+                style,
+                search_column,
+                output_column,
+            }),
+            ..self
+        }
+    }
 }
 
 impl<DB, Cols, Seed, Step, Body> QueryFragment<DB> for WithRecursive<DB, Cols, Seed, Step, Body>
@@ -151,6 +196,20 @@ where
         out.push_sql(self.union_kind.as_sql());
         self.step.walk_ast(out.reborrow())?;
         out.push_sql(") ");
+        if let Some(SearchConfig {
+            style,
+            search_column,
+            output_column,
+        }) = &self.search_config
+        {
+            out.push_sql("SEARCH ");
+            out.push_sql(style.to_string().as_str());
+            out.push_sql(" BY ");
+            out.push_identifier(search_column)?;
+            out.push_sql(" SET ");
+            out.push_identifier(output_column)?;
+            out.push_sql(" ");
+        }
         self.body.walk_ast(out.reborrow())
     }
 }

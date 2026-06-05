@@ -30,5 +30,7 @@ pub use columns::Columns;
 pub use connection_ext::RecursiveCTEExt;
 /// Marker trait implemented by Diesel backends that can run recursive CTEs.
 pub use cte::RecursiveBackend;
+/// The type of search style to use for recursive CTEs.
+pub use cte::SearchStyle;
 /// Wrapper for embedding Diesel fragments inside macro-driven queries.
 pub use macros::QueryPart;

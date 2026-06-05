@@ -125,6 +125,31 @@ async fn up_to_five_async() -> diesel::QueryResult<Vec<i32>> {
 }
 ```
 
+## Defining the search order
+
+Configuring the search order of recursive CTEs (breadth or depth first) can be done by calling with_search on the result of with_recursive or with_recursive_not_all.
+
+```rust,no_run
+use diesel::{dsl::sql, pg::PgConnection, sql_types::Integer, RunQueryDsl};
+use diesel_cte_ext::{RecursiveCTEExt, RecursiveParts, SearchOrder};
+
+fn reachable_nodes(conn: &mut PgConnection) -> diesel::QueryResult<Vec<i32>> {
+    conn.with_recursive_not_all(
+        "graph",
+        &["node_id"],
+        RecursiveParts::new(
+            sql::<Integer>("SELECT 1"),
+            sql::<Integer>(concat!(
+            "SELECT edges.target_id FROM edges ",
+            "INNER JOIN graph ON edges.source_id = graph.node_id"
+            )),
+            sql::<Integer>("SELECT node_id FROM graph ORDER BY ordercol"),
+        ),
+    ).with_search(SearchOrder::DepthFirst, "node_id", "ordercol")
+        .load(conn)
+}
+```
+
 ## Column helpers
 
 Manual column lists are easy to mistype, especially when a recursive step spans

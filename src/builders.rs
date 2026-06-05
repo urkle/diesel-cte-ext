@@ -34,6 +34,7 @@ macro_rules! impl_recursive_builder {
                 step: parts.step,
                 body: parts.body,
                 union_kind: $union_kind,
+                search_config: None,
                 _marker: std::marker::PhantomData,
             }
         }
