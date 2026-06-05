@@ -150,6 +150,49 @@ fn reachable_nodes(conn: &mut PgConnection) -> diesel::QueryResult<Vec<i32>> {
 }
 ```
 
+## Using diesel DSL builders instead of raw SQL
+
+Using the full diesel DSL can be used to build the CTE instead of raw SQL queries.
+
+```rust,no_run
+use diesel::prelude::*;
+use diesel_cte_ext::{RecursiveCTEExt, RecursiveParts};
+
+table! {
+    categories (id) {
+        id -> Integer,
+        parent_id -> Nullable<Integer>,
+    }
+}
+
+fn sample_recursive(conn: &mut pg::PgConnection, cat_id: i32) -> diesel::QueryResult<Vec<i32>> {
+    table! {
+        parents (id) {
+            id -> Nullable<Integer>,
+        }
+    }
+    allow_tables_to_appear_in_same_query!(categories, parents);
+
+    conn.with_recursive(
+        "parents",
+        &["id"],
+        RecursiveParts::new(
+            // seed query
+            categories::table.select(categories::parent_id)
+                .filter(categories::id.eq(cat_id)),
+            // recursive step
+            categories::table.select(categories::parent_id)
+                inner_join(
+                    parents::table.on(parentds::id..assume_not_null().eq(categories::id))
+                )    
+            // final body
+            parents::table.select(parents::id)
+        ),
+    )
+        .load(conn)
+}
+```
+
 ## Column helpers
 
 Manual column lists are easy to mistype, especially when a recursive step spans
